@@ -3,6 +3,13 @@
 import supabase from '@/utils/supabase'
 import { UUID } from 'crypto';
 import { Task, User } from '@/types/types'
+import { userArrayFromSupabase, taskArrayFromSupabase } from '@/utils/index'
+
+
+function getUserFromId() {
+  // gets user object from uuid
+
+}
 
 export async function getAllUsers() {
     const { data, error } = await supabase.from('Users').select('*');
@@ -10,30 +17,7 @@ export async function getAllUsers() {
       throw new Error('Error fetching users: ' + error.message);
     }
 
-    const users: User[] = data.map( user => {
-      const { uuid, name, email, room, birthday } = user;
-      return {
-        uuid: uuid,
-        name: name,
-        email: email,
-        room: room,
-        birthday: birthday,
-      };
-    })
-
-    return users;
-}
-
-function mapTasksFromSupabase() {
-// maps object from Supabase to Task[]
-}
-
-function mapUsersFromSupabase() {
-  // maps object from Supabase to User[]
-}
-
-function getUserFromId() {
-  // gets user object from uuid
+    return userArrayFromSupabase(data);
 }
 
 export async function getAllTasks() {
@@ -42,31 +26,77 @@ export async function getAllTasks() {
     throw new Error('Error fetching users: ' + error.message);
   }
 
-  const tasks: Task[] = data.map( task => {
-    const { uuid, task_name, task_desc, due_date, assignee, creator, task_type } = task;
-    return {
-      uuid: uuid,
-      task_name: task_name,
-      task_desc: task_desc,
-      due_date: due_date,
-      assignee: assignee,
-      creator: creator,
-      task_type: task_type
-    };
-  })
-
-  return tasks;
+  return taskArrayFromSupabase(data);
 }
 
-export async function getUserCompleteTasks(id: UUID) {
+// TO-TEST
+export async function getUserCompleteTasks(user_uuid: UUID) {
+  const { data, error } = await supabase
+    .from('Tasks')
+    .select('*')
+    .eq('assignee',user_uuid)
+    .eq('completed',true);
+  if (error) {
+    throw new Error('Error fetching users: ' + error.message);
+  }
 
+  return taskArrayFromSupabase(data);
 }
-// getUserIncompleteTasks
-// getUserOverdueTasks
-// getUserUpcomingTasks(id: uuid, date_range: string=+1week )
-// function getUserCompletedTasks(id: UUID): [Task] {
-    
-//     return []
-// }
 
-// addTask
+// TO-TEST
+export async function getUserIncompleteTasks(user_uuid: UUID) {
+  const { data, error } = await supabase
+    .from('Tasks')
+    .select('*')
+    .eq('assignee',user_uuid)
+    .eq('completed',false);
+  if (error) {
+    throw new Error('Error fetching users: ' + error.message);
+  }
+
+  return taskArrayFromSupabase(data);
+}
+
+// TO-TEST
+export async function getUserOvedueTasks(user_uuid: UUID) {
+  const { data, error } = await supabase
+    .from('Tasks')
+    .select('*')
+    .eq('assignee',user_uuid)
+    .lt('due_date', Date());
+  if (error) {
+    throw new Error('Error fetching users: ' + error.message);
+  }
+
+  return taskArrayFromSupabase(data);
+}
+
+// TO-TEST
+export async function getUserUpcomingTasks(user_uuid: UUID, within_num_days: number) {
+  const { data, error } = await supabase
+    .from('Tasks')
+    .select('*')
+    .eq('assignee',user_uuid)
+    .lt('due_date', Date() + within_num_days);
+  if (error) {
+    throw new Error('Error fetching users: ' + error.message);
+  }
+
+  return taskArrayFromSupabase(data);
+}
+
+// TO-TEST
+async function addRow(task: Task) {
+  const tableName = 'Tasks';
+
+  const { data, error } = await supabase
+    .from(tableName)
+    .insert([task]);
+
+  if (error) {
+    console.error('Error adding row:', error.message);
+    return;
+  }
+
+  console.log('Row added successfully.');
+}

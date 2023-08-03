@@ -25,4 +25,5 @@ export type Task = {
     assignee?: string;
     creator: UUID;
     task_type: TaskType;
+    completed: boolean;
 }
